@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>City Oestrich Winkel</title>
+    <style>
+        body {
+            background-color: darkgreen;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .header {
+            display: flex;
+            justify-content: flex-start;
+            padding: 10px;
+        }
+        .logo {
+            margin-right: 20px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .form-container {
+            margin-top: 20px;
+            display: block; /* Show the form initially */
+        }
+        .confirmation-container {
+            margin-top: 20px;
+            display: none; /* Hide the confirmation initially */
+        }
+        .form-field {
+            margin-bottom: 10px;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-field input, .form-field button, .form-field select {
+            width: 100%;
+            padding: 8px;
+        }
+        .submit-container {
+            text-align: right;
+        }
+        footer {
+            margin-top: 30px;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.3.0/dist/web3.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <img src="Oestrich.jpg" alt="City Oestrich Winkel Logo" class="logo">
+    </div>
+    
+    <div class="title">Construction Application Form for Oestrich Winkel</div>
+
+    <div class="form-container" id="formSection">
+        <form id="applicationForm">
+            <div class="form-field">
+                <label for="walletId">Government Wallet ID:</label>
+                <input type="text" id="walletId" name="walletId" required>
+            </div>
+            <div class="form-field">
+                <label for="applicationType">Application Type:</label>
+                <select id="applicationType" name="applicationType" required>
+                    <option value="">Select Application Type</option>
+                    <option value="oneFamilyHome">One-Family Home</option>
+                    <option value="multiFamilyHome">Multi-Family Home</option>
+                    <option value="commercial">Commercial</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="officeName">Name of Corresponding Office:</label>
+                <select id="officeName" name="officeName" required>
+                    <option value="">Select Office</option>
+                    <option value="officeOestrich">Office Oestrich</option>
+                    <option value="officeWinkel">Office Winkel</option>
+                    <option value="officeHallgarten">Office Hallgarten</option>
+                    <option value="officeEBS">Office EBS</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-field">
+                <label for="surname">Surname:</label>
+                <input type="text" id="surname" name="surname" required>
+            </div>
+            <div class="form-field">
+                <label for="address">Address:</label>
+                <input type="text" id="address" name="address" required>
+            </div>
+            <div class="form-field">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-field">
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <div class="form-field">
+                <label for="document">Upload Document (PDF only):</label>
+                <input type="file" id="document" name="document" accept=".pdf" multiple required>
+            </div>
+            <div class="submit-container">
+                <button type="submit">Submit Application</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="confirmation-container" id="confirmationSection">
+        <h2>Thank You for Your Registration</h2>
+        <p>We will carefully review your request and get back to you shortly.</p>
+        <p>Your Transaction Number: <span id="transactionNumber"></span></p>
+    </div>
+
+    <footer>
+        Oestrich Winkel Department of Building and Safety
+        <br>
+        Contact Information: 0049 1739425126
+        <br>
+        <a href="https://www.oestrich-winkel.de/stadtverwaltung/buerger-service/" target="_blank">Website</a>
+    </footer>
+
+    <script>
+        let web3;
+        let contract;
+        const contractAddress = '0x9CEa6b0110bf8266C44Ed43be5aeeddB06502d6b';
+        const contractABI = [ [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "documentId",
+				"type": "uint256"
+			}
+		],
+		"name": "DocumentApproved",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "documentId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "byParty",
+				"type": "address"
+			}
+		],
+		"name": "DocumentUploaded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "toParty",
+				"type": "address"
+			}
+		],
+		"name": "FundsReleased",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [],
+		"name": "TransactionMarkedPaid",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "confirmDocument1",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "confirmDocument2",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "document1",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "passwordHash",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bool",
+				"name": "isSubmitted",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "isApproved",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "document2",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "passwordHash",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bool",
+				"name": "isSubmitted",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "isApproved",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "fundsReleased",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "markTransactionPaidForDocument1",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "party1",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "party2",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_party1",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_party2",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_thirdParty",
+				"type": "address"
+			}
+		],
+		"name": "setParties",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "thirdParty",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "transactionPaidForDocument1",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_password",
+				"type": "string"
+			}
+		],
+		"name": "uploadDocument1",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_password",
+				"type": "string"
+			}
+		],
+		"name": "uploadDocument2",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+] ];
+
+        window.addEventListener('load', async () => {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+                } catch (error) {
+                    console.error("User denied account access...");
+                }
+            } else if (window.web3) {
+                web3 = new Web3(web3.currentProvider);
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+            } else {
+                console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+            }
+        });
+
+        document.getElementById('applicationForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const walletId = document.getElementById('walletId').value;
+            // Extract other form values as needed
+
+            try {
+                const accounts = await web3.eth.getAccounts();
+                await contract.methods.uploadDocument1(walletId, 'password').send({ from: accounts[0] });
+                // Handle successful transaction
+                document.getElementById('formSection').style.display = 'none';
+                document.getElementById('confirmationSection').style.display = 'block';
+                document.getElementById('transactionNumber').textContent = 'TXN-' + Math.floor(Math.random() * 1000000);
+            } catch (error) {
+                console.error("Error while uploading document:", error);
+            }
+        });
+    </script>
+</body>
+</html>
